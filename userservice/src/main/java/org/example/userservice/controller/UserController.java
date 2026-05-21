@@ -1,6 +1,7 @@
-package org.example.userservice;
+package org.example.userservice.controller;
 
 import jakarta.validation.Valid;
+import org.example.userservice.service.UserService;
 import org.example.userservice.dto.CreateUserDTO;
 import org.example.userservice.dto.UpdateUserDTO;
 import org.example.userservice.dto.UserDTO;
@@ -17,11 +18,6 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
-
-//    @GetMapping("/api/test")
-//    public String getTest(@RequestHeader(value = "X-User-Name", defaultValue = "anonymous") String username) {
-//        return "Hej " + username;
-//    }
 
     @GetMapping
     public List<UserDTO> getAllUsers() {

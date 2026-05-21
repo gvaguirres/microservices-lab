@@ -27,7 +27,7 @@ public class User {
     private UserStatus status = UserStatus.PENDING;
 
     public enum UserStatus {
-        PENDING, REGISTERED, CANCELLED
+        PENDING, REGISTERED
     }
 
     public User() {}
