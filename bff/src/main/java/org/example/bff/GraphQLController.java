@@ -1,5 +1,6 @@
 package org.example.bff;
 
+import org.example.bff.dto.UserDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -63,9 +64,3 @@ public class GraphQLController {
 }
 
 record Result(String messageservice, String userservice) {}
-record UserDTO(
-        Long id,
-        String firstName,
-        String lastName,
-        String email,
-        String phoneNumber) {}

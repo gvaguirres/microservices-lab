@@ -33,7 +33,7 @@ public class BffConfig {
 
     @Bean
     public RouterFunction<ServerResponse> route1() {
-        // /api/test -> http://localhost:8081/api/test
+
         return route()
                 .GET("/users", http())
                 .before(uri("http://localhost:8081/"))
@@ -44,8 +44,7 @@ public class BffConfig {
 
     @Bean
     public RouterFunction<ServerResponse> route2(){
-        // /api/test2 -> http://localhost:8082/api/test
-        //service 2 som är en kopia av service 1
+
         return route()
                 .GET("/user-profile", http())
                 .before(uri("http://localhost:8082/"))
