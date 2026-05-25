@@ -4,4 +4,4 @@ public record MessageDTO(
         Long id,
         Long senderId,
         Long receiverId,
-        String message){}
+        String text){}
