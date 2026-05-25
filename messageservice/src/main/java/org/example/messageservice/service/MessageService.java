@@ -1,0 +1,75 @@
+package org.example.messageservice.service;
+
+import jakarta.validation.Valid;
+import org.example.messageservice.MessagePublishedEvent;
+import org.example.messageservice.MessageRepository;
+import org.example.messageservice.ResourceNotFoundException;
+import org.example.messageservice.dto.CreateMessageDTO;
+import org.example.messageservice.dto.MessageDTO;
+import org.example.messageservice.entity.Message;
+import org.example.messageservice.mapper.MessageMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+
+@Service
+@Transactional
+public class MessageService {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
+    private final MessageRepository messageRepository;
+    private final MessageMapper messageMapper;
+    private final MessageProducer messageProducer;
+
+    public MessageService(MessageRepository messageRepository, MessageMapper messageMapper, MessageProducer messageProducer) {
+        this.messageRepository = messageRepository;
+        this.messageMapper = messageMapper;
+        this.messageProducer = messageProducer;
+    }
+
+    public List<MessageDTO> getMessages() {
+
+        log.info("Hämtar alla meddelanden");
+
+        return messageRepository.findAll().stream()
+                .sorted(Comparator.comparing(Message::getId))
+                .map(messageMapper::toDto)
+                .toList();
+    }
+
+    public MessageDTO getMessageById(Long id) {
+
+        log.info("Hämtar meddelande med id {}", id);
+
+        return messageRepository.findById(id)
+                .map(messageMapper::toDto)
+                .orElseThrow( () -> new ResourceNotFoundException("Message not found with id: " + id));
+
+    }
+
+    public MessageDTO sendMessage(@Valid CreateMessageDTO createMessageDTO) {
+
+        log.info("Skickar meddelande från {} till {}",
+                createMessageDTO.senderId(),
+                createMessageDTO.receiverId());
+
+        Message message = messageMapper.toEntity(createMessageDTO);
+        Message newMessage = messageRepository.save(message);
+
+        //Publicerar händelsen "message-published" till Message Queue
+        MessagePublishedEvent event = new MessagePublishedEvent(
+                newMessage.getId(),
+                newMessage.getSenderId(),
+                newMessage.getReceiverId(),
+                newMessage.getText(),
+                newMessage.getCreatedAt()
+        );
+        messageProducer.publishMessage(event);
+
+        return messageMapper.toDto(newMessage);
+    }
+}
