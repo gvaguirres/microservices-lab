@@ -20,6 +20,7 @@ public class BffRestController {
 
     private static final Logger log = LoggerFactory.getLogger(BffRestController.class);
     private final Oauth2JwtTokenService tokenService;
+    private final RestClient authClient = RestClient.create("http://localhost:9000");
     private final RestClient userClient = RestClient.create("http://localhost:8081");
     private final RestClient messageClient = RestClient.create("http://localhost:8082");
 
@@ -27,7 +28,19 @@ public class BffRestController {
         this.tokenService = tokenService;
     }
 
-    @PostMapping("/users")
+    @PostMapping("/login")
+    public TokenResponse login(@RequestBody LoginRequest request) {
+
+        log.info("BFF REST: Loggar in användare {}", request.username());
+
+        return authClient.post()
+                .uri("/login")
+                .body(request)
+                .retrieve()
+                .body(TokenResponse.class);
+    }
+
+    @PostMapping("/users/create")
     public UserDTO createUser(@RequestBody CreateUserDTO createUserDTO) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String jwtToken = tokenService.getAccessToken(auth);
@@ -35,11 +48,11 @@ public class BffRestController {
         log.info("BFF REST: Skapar användare med email {}", createUserDTO.email());
 
         return userClient.post()
-                    .uri("/users")
-                    .headers(h -> h.setBearerAuth(jwtToken))
-                    .body(createUserDTO)
-                    .retrieve()
-                    .body(UserDTO.class);
+                .uri("/users/create")
+                .headers(h -> h.setBearerAuth(jwtToken))
+                .body(createUserDTO)
+                .retrieve()
+                .body(UserDTO.class);
     }
 
     @GetMapping("/messages")
@@ -53,11 +66,12 @@ public class BffRestController {
                 .uri("/messages")
                 .headers(h -> h.setBearerAuth(jwtToken))
                 .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+                .body(new ParameterizedTypeReference<>() {
+                });
     }
 
     @PostMapping("/messages")
-    public String sendMessage(@RequestBody CreateMessageDTO createMessageDTO) {
+    public MessageDTO sendMessage(@RequestBody CreateMessageDTO createMessageDTO) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String jwtToken = tokenService.getAccessToken(auth);
 
@@ -70,6 +84,13 @@ public class BffRestController {
                 .headers(h -> h.setBearerAuth(jwtToken))
                 .body(createMessageDTO)
                 .retrieve()
-                .body(String.class);
+                .body(MessageDTO.class);
     }
 }
+
+record LoginRequest(
+        String username,
+        String password){}
+
+record TokenResponse(
+        String accessToken) {}
