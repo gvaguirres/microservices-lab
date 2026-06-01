@@ -2,13 +2,17 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feat/integration ]
   pull_request:
     branches: [ main, develop ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [authservice, userservice, messageservice, bff, cli]
 
     steps:
       - name: Checkout code
@@ -18,11 +22,13 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '26'
+          java-version: '25'
           cache: 'maven'
 
       - name: Make Maven wrapper executable
+        working-directory: ${{ matrix.service }}
         run: chmod +x ./mvnw
 
-      - name: Build and test with Maven
+      - name: Build and test ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
         run: ./mvnw clean verify
