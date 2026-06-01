@@ -1,9 +1,9 @@
 package org.example.messageservice.service;
 
 import jakarta.validation.Valid;
-import org.example.messageservice.MessagePublishedEvent;
-import org.example.messageservice.MessageRepository;
-import org.example.messageservice.ResourceNotFoundException;
+import org.example.messageservice.event.MessagePublishedEvent;
+import org.example.messageservice.repository.MessageRepository;
+import org.example.messageservice.exception.ResourceNotFoundException;
 import org.example.messageservice.dto.CreateMessageDTO;
 import org.example.messageservice.dto.MessageDTO;
 import org.example.messageservice.entity.Message;

@@ -1,6 +1,6 @@
 package org.example.messageservice.service;
 
-import org.example.messageservice.MessagePublishedEvent;
+import org.example.messageservice.event.MessagePublishedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;

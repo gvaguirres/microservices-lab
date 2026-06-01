@@ -1,4 +1,4 @@
-package org.example.messageservice;
+package org.example.messageservice.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {

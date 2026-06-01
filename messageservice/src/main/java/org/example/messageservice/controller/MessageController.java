@@ -1,9 +1,10 @@
-package org.example.messageservice;
+package org.example.messageservice.controller;
 
 import jakarta.validation.Valid;
 import org.example.messageservice.dto.CreateMessageDTO;
 import org.example.messageservice.dto.MessageDTO;
 import org.example.messageservice.service.MessageService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.example.grpc.UserProfileRequest;
 import org.example.grpc.UserProfileResponse;

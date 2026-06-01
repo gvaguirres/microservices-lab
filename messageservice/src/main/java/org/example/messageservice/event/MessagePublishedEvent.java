@@ -1,4 +1,4 @@
-package org.example.messageservice;
+package org.example.messageservice.event;
 
 import java.time.LocalDateTime;
 

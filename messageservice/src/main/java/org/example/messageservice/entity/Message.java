@@ -13,10 +13,10 @@ public class Message {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "send_id", nullable = false, unique = true)
+    @Column(name = "send_id", nullable = false)
     private Long senderId;
 
-    @Column(name = "receiver_id", nullable = false, unique = true)
+    @Column(name = "receiver_id", nullable = false)
     private Long receiverId;
 
     @Column(name = "text", length = 1000)
