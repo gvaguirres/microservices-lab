@@ -1,5 +1,6 @@
-package org.example.bff;
+package org.example.bff.controller;
 
+import org.example.bff.service.Oauth2JwtTokenService;
 import org.example.bff.dto.UserDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

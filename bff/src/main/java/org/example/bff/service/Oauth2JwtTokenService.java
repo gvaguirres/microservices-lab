@@ -1,4 +1,4 @@
-package org.example.bff;
+package org.example.bff.service;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
