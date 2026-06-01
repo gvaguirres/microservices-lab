@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [authservice, userservice, messageservice, bff, cli]
+        service: [authservice, userservice, messageservice, bff]
 
     steps:
       - name: Checkout code
