@@ -1,4 +1,4 @@
-package org.example.bff;
+package org.example.bff.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +28,7 @@ public class BffConfig {
                 .oauth2Login(Customizer.withDefaults())
                 //Enable OAuth2 client (needed for tokenRelay)
                 .oauth2Client(Customizer.withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .build();
     }
 
