@@ -23,13 +23,6 @@ public class User {
     @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
 
-    @Enumerated(EnumType.STRING)
-    private UserStatus status = UserStatus.PENDING;
-
-    public enum UserStatus {
-        PENDING, REGISTERED
-    }
-
     public User() {}
 
     public User(String firstName, String lastName, String email, String phoneNumber) {
@@ -68,11 +61,5 @@ public class User {
     }
     public void setEmail(String email) {
         this.email = email;
-    }
-    public UserStatus getStatus() {
-        return status;
-    }
-    public void setStatus(UserStatus status) {
-        this.status = status;
     }
 }
