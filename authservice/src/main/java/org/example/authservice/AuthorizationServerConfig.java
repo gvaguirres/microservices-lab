@@ -3,6 +3,7 @@ package org.example.authservice;
 import com.nimbusds.jose.jwk.*;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.userdetails.User;
@@ -15,10 +16,13 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
@@ -33,14 +37,16 @@ import java.util.UUID;
 public class AuthorizationServerConfig {
 
     @Bean
-    public RegisteredClientRepository registeredClientRepository(PasswordEncoder passwordEncoder) {
+    public RegisteredClientRepository registeredClientRepository(
+            PasswordEncoder passwordEncoder,
+            @Value("${auth.redirect-uri:http://localhost:8080/login/oauth2/code/authservice}") String redirectUri) {
         RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("gateway-client")
                 .clientSecret(passwordEncoder.encode("secret"))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("http://localhost:8080/login/oauth2/code/authservice")
+                .redirectUri(redirectUri)
                 .scopes(scopes -> scopes.addAll(
                         Set.of("user.read", "user.write",
                                 OidcScopes.OPENID,
@@ -48,15 +54,69 @@ public class AuthorizationServerConfig {
                 .tokenSettings(TokenSettings.builder()
                         .reuseRefreshTokens(false) // Rotation för säkerhet
                         .build())
+                .clientSettings(ClientSettings.builder()
+                        .requireProofKey(true)  // PKCE recommended for Authorization Code flow
+                        .requireAuthorizationConsent(false)
+                        .build())
                 .build();
 
-        return new InMemoryRegisteredClientRepository(client);
+        // 2. CLI Client using Device Authorization Grant
+        RegisteredClient cliClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("cli-client")
+                .clientSecret(passwordEncoder.encode("secret"))
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.DEVICE_CODE)
+                .scopes(scopes -> scopes.addAll(
+                        Set.of("user.read", "user.write")))
+                .tokenSettings(TokenSettings.builder()
+                        .reuseRefreshTokens(false) // Rotation för säkerhet
+                        .build())
+                .clientSettings(ClientSettings.builder()
+                        .requireAuthorizationConsent(true) // Often skipped for CLI experiences
+                        .build())
+                .build();
+
+        return new InMemoryRegisteredClientRepository(cliClient, client);
     }
 
     @Bean
-    public AuthorizationServerSettings authorizationServerSettings() {
+    public OAuth2AuthorizationConsentService authorizationConsentService(
+            RegisteredClientRepository registeredClientRepository) {
+        return new OAuth2AuthorizationConsentService() {
+
+            @Override
+            public void save(OAuth2AuthorizationConsent authorizationConsent) {
+                // no-op: don't persist, auto-approve
+            }
+
+            @Override
+            public void remove(OAuth2AuthorizationConsent authorizationConsent) {
+                // no-op
+            }
+
+            @Override
+            public OAuth2AuthorizationConsent findById(String registeredClientId, String principalName) {
+                // Return a pre-approved consent for cli-client
+                RegisteredClient client = registeredClientRepository.findById(registeredClientId);
+                if (client != null && "cli-client".equals(client.getClientId())) {
+                    return OAuth2AuthorizationConsent
+                            .withId(registeredClientId, principalName)
+                            .scope("openid")
+                            .scope("read")
+                            .build();
+                }
+                return null;
+            }
+        };
+    }
+
+    @Bean
+    public AuthorizationServerSettings authorizationServerSettings(
+            @Value("${auth.issuer:http://127.0.0.1:9000}") String issuer) {
         return AuthorizationServerSettings.builder()
-                .issuer("http://127.0.0.1:9000")
+                .issuer(issuer)
+//                .deviceAuthorizationEndpoint("/oauth2/device_authorization")
+//                .deviceVerificationEndpoint("/activate")
                 .build();
     }
 
@@ -64,11 +124,17 @@ public class AuthorizationServerConfig {
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         UserDetails user = User.builder()
                 .username("demo")
-                .password(passwordEncoder.encode("demo")) // Krypterar "demo" korrekt
+                .password(passwordEncoder.encode("demo"))
                 .roles("USER")
                 .build();
 
-        return new InMemoryUserDetailsManager(user);
+        UserDetails user2 = User.builder()
+                .username("user")
+                .password(passwordEncoder.encode("password"))
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(user, user2);
     }
 
 
