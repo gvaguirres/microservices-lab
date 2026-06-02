@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 public class MessageProducer {
@@ -16,6 +18,7 @@ public class MessageProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publishMessage(MessagePublishedEvent event) {
 
         log.info("Publicerar event till Kafka topic message-published för message id {}",

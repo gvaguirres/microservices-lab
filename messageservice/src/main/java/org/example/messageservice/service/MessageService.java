@@ -1,6 +1,5 @@
 package org.example.messageservice.service;
 
-import jakarta.validation.Valid;
 import org.example.messageservice.event.MessagePublishedEvent;
 import org.example.messageservice.repository.MessageRepository;
 import org.example.messageservice.exception.ResourceNotFoundException;
@@ -10,6 +9,7 @@ import org.example.messageservice.entity.Message;
 import org.example.messageservice.mapper.MessageMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +23,14 @@ public class MessageService {
     private static final Logger log = LoggerFactory.getLogger(MessageService.class);
     private final MessageRepository messageRepository;
     private final MessageMapper messageMapper;
-    private final MessageProducer messageProducer;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public MessageService(MessageRepository messageRepository, MessageMapper messageMapper, MessageProducer messageProducer) {
+    public MessageService(MessageRepository messageRepository,
+                          MessageMapper messageMapper,
+                          ApplicationEventPublisher eventPublisher) {
         this.messageRepository = messageRepository;
-        this.messageMapper = messageMapper;
-        this.messageProducer = messageProducer;
+        this.messageMapper     = messageMapper;
+        this.eventPublisher    = eventPublisher;
     }
 
     public List<MessageDTO> getMessages() {
@@ -68,7 +70,8 @@ public class MessageService {
                 newMessage.getText(),
                 newMessage.getCreatedAt()
         );
-        messageProducer.publishMessage(event);
+
+        eventPublisher.publishEvent(event);
 
         return messageMapper.toDto(newMessage);
     }
