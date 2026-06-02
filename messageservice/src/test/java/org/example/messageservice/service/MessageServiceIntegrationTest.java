@@ -3,25 +3,19 @@ package org.example.messageservice.service;
 import org.example.messageservice.dto.CreateMessageDTO;
 import org.example.messageservice.dto.MessageDTO;
 import org.example.messageservice.entity.Message;
-import org.example.messageservice.event.MessagePublishedEvent;
+import org.example.messageservice.entity.OutboxEvent;
 import org.example.messageservice.exception.ResourceNotFoundException;
 import org.example.messageservice.repository.MessageRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.example.messageservice.repository.OutboxEventRepository;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
@@ -40,14 +34,8 @@ class MessageServiceIntegrationTest {
     @Autowired
     private MessageRepository messageRepository;
 
-    @MockitoBean
-    private ApplicationEventPublisher eventPublisher;
-
-    @BeforeEach
-    void setUp() {
-        // Manually inject the mock
-        ReflectionTestUtils.setField(messageService, "eventPublisher", eventPublisher);
-    }
+    @Autowired
+    private OutboxEventRepository outboxEventRepository;
 
     @Test
     void shouldCreateMessageAndPersistIt() {
@@ -87,20 +75,21 @@ class MessageServiceIntegrationTest {
     }
 
     @Test
-    void shouldPublishMessagePublishedEventWhenMessageIsCreated() {
+    void shouldCreateOutboxEventWhenMessageIsCreated() {
 
-        CreateMessageDTO dto = new CreateMessageDTO(10L, 20L, "Kafka Test");
+        CreateMessageDTO dto = new CreateMessageDTO(10L, 20L, "Outbox Test");
 
         MessageDTO result = messageService.sendMessage(dto);
 
-        ArgumentCaptor<MessagePublishedEvent> eventCaptor = ArgumentCaptor.forClass(MessagePublishedEvent.class);
-        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
-
-        MessagePublishedEvent publishedEvent = eventCaptor.getValue();
-        assertThat(publishedEvent.messageId()).isEqualTo(result.id());
-        assertThat(publishedEvent.senderId()).isEqualTo(10L);
-        assertThat(publishedEvent.receiverId()).isEqualTo(20L);
-        assertThat(publishedEvent.message()).isEqualTo("Kafka Test");
+        List<OutboxEvent> outboxEvents = outboxEventRepository.findAll();
+        assertThat(outboxEvents).hasSize(1);
+        
+        OutboxEvent event = outboxEvents.get(0);
+        assertThat(event.getMessageId()).isEqualTo(result.id());
+        assertThat(event.getSenderId()).isEqualTo(10L);
+        assertThat(event.getReceiverId()).isEqualTo(20L);
+        assertThat(event.getText()).isEqualTo("Outbox Test");
+        assertThat(event.getStatus()).isEqualTo(OutboxEvent.Status.PENDING);
     }
 
     @Test

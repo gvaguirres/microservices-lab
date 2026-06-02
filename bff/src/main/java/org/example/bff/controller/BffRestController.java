@@ -36,7 +36,7 @@ public class BffRestController {
     public UserDTO createUser(@RequestBody CreateUserDTO createUserDTO,
                               @AuthenticationPrincipal Jwt jwt) {
 
-        log.info("BFF REST: Skapar användare med email {}", createUserDTO.email());
+        log.info("BFF REST: Skapar användare med email");
 
         return userClient.post()
                 .uri("/users/create")
