@@ -4,6 +4,7 @@ import org.example.bff.service.Oauth2JwtTokenService;
 import org.example.bff.dto.UserDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.security.core.Authentication;
@@ -19,11 +20,17 @@ public class GraphQLController {
     private static final Logger log = LoggerFactory.getLogger(GraphQLController.class);
 
     private final Oauth2JwtTokenService tokenService;
-    private final RestClient client1 = RestClient.create("http://localhost:8082");
-    private final RestClient client2 = RestClient.create("http://localhost:8081");
+    private final RestClient messageClient;
+    private final RestClient userClient;
 
-    public GraphQLController(Oauth2JwtTokenService tokenService) {
-        this.tokenService = tokenService;
+    public GraphQLController(
+            Oauth2JwtTokenService tokenService,
+            @Value("${app.services.message-url}") String messageUrl,
+            @Value("${app.services.user-url}") String userUrl) {
+
+        this.tokenService  = tokenService;
+        this.messageClient = RestClient.create(messageUrl);
+        this.userClient    = RestClient.create(userUrl);
     }
 
     @QueryMapping
@@ -40,7 +47,7 @@ public class GraphQLController {
         return CompletableFuture.supplyAsync(() -> {
             log.info("Exekverar: Hämtar data från Message Service");
 
-            return client1.get()
+            return messageClient.get()
                     .uri("/user-profile?userId=1")
                     .headers(h -> h.setBearerAuth(jwtToken))
                     .retrieve()
@@ -55,7 +62,7 @@ public class GraphQLController {
         return CompletableFuture.supplyAsync(() -> {
             log.info("Exekverar: Hämtar data från User Service");
 
-            return client2.get()
+            return userClient.get()
                     .uri("/users/1")
                     .headers(h -> h.setBearerAuth(jwtToken))
                     .retrieve()

@@ -6,6 +6,7 @@ import org.example.bff.dto.MessageDTO;
 import org.example.bff.dto.UserDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
@@ -17,10 +18,19 @@ import java.util.List;
 public class BffRestController {
 
     private static final Logger log = LoggerFactory.getLogger(BffRestController.class);
-    private final RestClient userClient = RestClient.create("http://localhost:8081");
-    private final RestClient messageClient = RestClient.create("http://localhost:8082");
+    private final RestClient userClient;
+    private final RestClient messageClient;
 
-    @PostMapping("/users/create")
+    public BffRestController(
+            @Value("${app.services.user-url}") String userUrl,
+            @Value("${app.services.message-url}") String messageUrl) {
+        
+        this.messageClient = RestClient.create(messageUrl);
+        this.userClient    = RestClient.create(userUrl);
+    }
+
+
+        @PostMapping("/users/create")
     public UserDTO createUser(@RequestBody CreateUserDTO createUserDTO,
                               @RequestHeader("Authorization") String authorization) {
 
