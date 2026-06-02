@@ -19,7 +19,7 @@ public class OutboxEvent {
     @Enumerated(EnumType.STRING)
     private Status status = Status.PENDING;
 
-    public enum Status { PENDING, SENT, FAILED }
+    public enum Status { PENDING, PROCESSING, SENT, FAILED }
 
     public Long getId() {
         return id;
