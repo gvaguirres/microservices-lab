@@ -51,7 +51,7 @@ public class MessageService {
 
     }
 
-    public MessageDTO sendMessage(@Valid CreateMessageDTO createMessageDTO) {
+    public MessageDTO sendMessage(CreateMessageDTO createMessageDTO) {
 
         log.info("Skickar meddelande från {} till {}",
                 createMessageDTO.senderId(),
