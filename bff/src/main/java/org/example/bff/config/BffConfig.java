@@ -23,7 +23,7 @@ public class BffConfig {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated())
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/bff/**"))
                 //Enable OAuth2 login (for browser users)
                 .oauth2Login(Customizer.withDefaults())
                 //Enable OAuth2 client (needed for tokenRelay)
