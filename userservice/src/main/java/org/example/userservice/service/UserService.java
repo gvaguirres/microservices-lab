@@ -34,11 +34,11 @@ public class UserService {
         boolean exists = userRepository.existsByEmail(createDto.email());
 
         if (exists) {
-            log.warn("Användare med email {} finns redan", createDto.email());
+            log.warn("User creation rejected because the email is already in use");
             throw new UserAlreadyExistsException("User with email " + createDto.email() + " already exists.");
         }
 
-        log.info("Skapar användare med email {}", createDto.email());
+        log.info("Creating user");
         User user = userMapper.toEntity(createDto);
         User newUser = userRepository.save(user);
         return userMapper.toDto(newUser);
@@ -47,18 +47,18 @@ public class UserService {
     public UserDTO updateUser(Long id, UpdateUserDTO updateDto) {
 
         User user = userRepository.findById(id).orElseThrow( () -> {
-            log.warn("Användare med id {} hittades inte", id);
+            log.warn("User with id {} not found", id);
             return new ResourceNotFoundException("User not found with id: " + id);
         });
 
         if (updateDto.email() != null &&
                 userRepository.existsByEmailAndIdNot(updateDto.email(), id)) {
-            log.warn("Email {} används redan av en annan användare", updateDto.email());
+            log.warn("User update rejected because the email is already in use");
             throw new UserAlreadyExistsException(
                     "User with email " + updateDto.email() + " already exists."
             );
         }
-        log.info("Uppdaterar användare med id {}", id);
+        log.info("Updating user with id {}", id);
         userMapper.updateEntityFromDto(updateDto, user);
         User updatedUser = userRepository.save(user);
         return userMapper.toDto(updatedUser);
@@ -69,13 +69,13 @@ public class UserService {
         if (!userRepository.existsById(id))
             throw new ResourceNotFoundException("User not found with id: " + id);
 
-        log.info("Tar bort användare med id {}", id);
+        log.info("Delete user with id {}", id);
         userRepository.deleteById(id);
     }
 
     public List<UserDTO> getAllUsers() {
 
-        log.info("Hämtar alla användare");
+        log.info("Fetching all users");
 
         return userRepository.findAll().stream()
                 .sorted(Comparator.comparing(User::getId))
@@ -85,7 +85,7 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
 
-        log.info("Hämtar användare med id {}", id);
+        log.info("Fetching user by id");
 
         return userRepository.findById(id)
                 .map(userMapper::toDto)
@@ -94,7 +94,7 @@ public class UserService {
 
     public UserDTO getUserByEmail(String email) {
 
-        log.info("Hämtar användare med email {}", email);
+        log.info("Fetching user by email");
 
         return userRepository.findByEmail(email)
                 .map(userMapper::toDto)
@@ -103,7 +103,7 @@ public class UserService {
 
     public UserDTO getUserByPhoneNumber(String phoneNumber) {
 
-        log.info("Hämtar användare med telefonnummer {}", phoneNumber);
+        log.info("Fetching user by phone number");
 
         return userRepository.findByPhoneNumber(phoneNumber)
                 .map(userMapper::toDto)
