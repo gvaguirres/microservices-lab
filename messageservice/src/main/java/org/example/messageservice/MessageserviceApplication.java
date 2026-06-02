@@ -8,7 +8,7 @@ import org.springframework.grpc.client.ImportGrpcClients;
 @ImportGrpcClients(basePackages = "org.example.grpc")
 public class MessageserviceApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(MessageserviceApplication.class, args);
     }
 
