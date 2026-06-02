@@ -35,35 +35,37 @@ public class CliApplication implements CommandLineRunner {
         Scanner scanner = new Scanner(System.in);
         boolean option = true;
 
-        while(option){
+        while (option) {
 
             System.out.print("Enter an option: ");
             System.out.println("""
-                        1. Login
-                        2. Exit""");
-            
+                    1. Login
+                    2. Exit""");
+
             String input = scanner.nextLine();
 
-            if(input.equals("1")) {
+            if (input.equals("1")) {
 
-                String jwtToken = deviceFlowService.getJwtToken();
+                try {
+                    String jwtToken = deviceFlowService.getJwtToken();
 
-                System.out.println("TOKEN:");
-                System.out.println(jwtToken);
+                    while (option) {
+                        System.out.print("Enter an option: ");
+                        System.out.println("""
+                    1. Create a user
+                    2. Send messages
+                    3. Get messages
+                    4. Exit""");
 
-                while(option) {
+                        String authenticatedInput = scanner.nextLine();
+                        option = isOption(authenticatedInput, scanner, jwtToken, option);
+                    }
+                    option = true;
 
-                    System.out.print("Enter an option: ");
-                    System.out.println("""
-                            1. Create a user
-                            2. Send messages
-                            3. Get messages
-                            4. Exit""");
-
-                    String authenticatedInput = scanner.nextLine();
-                    option = isOption(authenticatedInput, scanner, jwtToken, option);
+                } catch (Exception e) {
+                    System.out.println("Login failed: " + e.getMessage());
                 }
-            } else if(input.equals("2")) {
+            } else if (input.equals("2")) {
                 option = false;
             } else {
                 System.out.println("Invalid input, please try again.");
@@ -83,25 +85,34 @@ public class CliApplication implements CommandLineRunner {
     }
 
     private void createUser(Scanner scanner, String jwtToken) {
-        System.out.print("Enter first name: ");
-        String firstName = scanner.nextLine();
-        System.out.print("Enter last name: ");
-        String lastName = scanner.nextLine();
-        System.out.print("Enter email: ");
-        String email = scanner.nextLine();
-        System.out.print("Enter phone number: ");
-        String phoneNumber = scanner.nextLine();
+        try {
+            System.out.print("Enter first name: ");
+            String firstName = scanner.nextLine();
+            System.out.print("Enter last name: ");
+            String lastName = scanner.nextLine();
+            System.out.print("Enter email: ");
+            String email = scanner.nextLine();
+            System.out.print("Enter phone number: ");
+            String phoneNumber = scanner.nextLine();
 
-        CreateUserDTO dto = new CreateUserDTO(firstName, lastName, email, phoneNumber);
+            CreateUserDTO dto = new CreateUserDTO(firstName, lastName, email, phoneNumber);
+            bffClient.post()
+                    .uri("/bff/users/create")
+                    .body(dto)
+                    .headers(h -> h.setBearerAuth(jwtToken))
+                    .retrieve()
+                    .body(UserDTO.class);
+            System.out.println("User created successfully!\n");
 
-        bffClient.post()
-                .uri("/bff/users/create")
-                .body(dto)
-                .headers(h -> h.setBearerAuth(jwtToken))
-                .retrieve()
-                .body(UserDTO.class);
-
-        System.out.println("User created successfully!\n");
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode() == HttpStatus.CONFLICT) {
+                System.out.println("A user with that email already exists.");
+            } else {
+                System.out.println("Could not create user: " + ex.getStatusCode());
+            }
+        } catch (Exception e) {
+            System.out.println("Could not create user: " + e.getMessage());
+        }
     }
 
     private void sendMessage(Scanner scanner, String jwtToken) {
@@ -133,11 +144,9 @@ public class CliApplication implements CommandLineRunner {
 
             if (ex.getStatusCode() == HttpStatus.CONFLICT) {
                 System.out.println("A conversation already exists.");
-            }
-            else if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+            } else if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
                 System.out.println("User not found.");
-            }
-            else {
+            } else {
                 System.out.println("Request failed.");
             }
 
@@ -147,26 +156,30 @@ public class CliApplication implements CommandLineRunner {
     }
 
     private void getMessages(String jwtToken) {
-        List<MessageDTO> messages = bffClient.get()
-                .uri("/bff/messages")
-                .headers(h -> h.setBearerAuth(jwtToken))
-                .retrieve()
-                .body(new ParameterizedTypeReference<>(){});
+        try {
+            List<MessageDTO> messages = bffClient.get()
+                    .uri("/bff/messages")
+                    .headers(h -> h.setBearerAuth(jwtToken))
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
 
-        if (messages == null || messages.isEmpty()) {
-            System.out.println("No messages found.");
-            return;
+            if (messages == null || messages.isEmpty()) {
+                System.out.println("No messages found.");
+                return;
+            }
+            System.out.println("\n==========================================================");
+            System.out.println("                   MESSAGES                 ");
+            System.out.println("==========================================================");
+            for (MessageDTO msg : messages) {
+                System.out.printf(" [%s] Sender %s ➔ Receiver %s%n", msg.id(), msg.senderId(), msg.receiverId());
+                System.out.printf(" Message: %s%n", msg.text());
+                System.out.println("----------------------------------------------------------");
+            }
+            System.out.println();
+
+        } catch (Exception e) {
+            System.out.println("Could not retrieve messages: " + e.getMessage());
         }
-
-        System.out.println("\n==========================================================");
-        System.out.println("                   MESSAGES                 ");
-        System.out.println("==========================================================");
-
-        for (MessageDTO msg : messages) {
-            System.out.printf(" [%s] Sender %s ➔ Receiver %s%n", msg.id(), msg.senderId(), msg.receiverId());
-            System.out.printf(" Message: %s%n", msg.text());
-            System.out.println("----------------------------------------------------------");
-        }
-        System.out.println();
     }
 }

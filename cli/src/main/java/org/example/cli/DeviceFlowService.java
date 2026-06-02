@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 
 @Service
@@ -25,7 +26,9 @@ public class DeviceFlowService {
     static final String TOKEN_URL = AUTH_SERVER + "/oauth2/token";
     static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
 
-    static final HttpClient HTTP = HttpClient.newHttpClient();
+    static final HttpClient HTTP = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
     static final ObjectMapper JSON = new ObjectMapper();
 
     /**
@@ -106,10 +109,6 @@ public class DeviceFlowService {
             } else {
                 // ── Steg 4: Vi fick ett token! ────────────────────────────
                 System.out.println("\n\nLyckades! Token mottaget:\n");
-                System.out.println("Access token : " + tokenResponse.get("access_token").asText());
-                if (tokenResponse.has("refresh_token")) {
-                    System.out.println("Refresh token: " + tokenResponse.get("refresh_token").asText());
-                }
                 System.out.println("Token type   : " + tokenResponse.get("token_type").asText());
                 System.out.println("Expires in   : " + tokenResponse.get("expires_in").asText() + "s");
                 if (tokenResponse.has("scope")) {
@@ -134,6 +133,7 @@ public class DeviceFlowService {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(15))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Authorization", "Basic " + credentials)
                 .POST(HttpRequest.BodyPublishers.ofString(body))
