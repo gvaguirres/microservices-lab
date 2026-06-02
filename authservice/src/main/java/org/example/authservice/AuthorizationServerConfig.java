@@ -101,8 +101,8 @@ public class AuthorizationServerConfig {
                 if (client != null && "cli-client".equals(client.getClientId())) {
                     return OAuth2AuthorizationConsent
                             .withId(registeredClientId, principalName)
-                            .scope("openid")
-                            .scope("read")
+                            .scope("user.read")
+                            .scope("user.write")
                             .build();
                 }
                 return null;
