@@ -1,6 +1,7 @@
-package org.example.userservice;
+package org.example.userservice.controller;
 
 import jakarta.validation.Valid;
+import org.example.userservice.service.UserService;
 import org.example.userservice.dto.CreateUserDTO;
 import org.example.userservice.dto.UpdateUserDTO;
 import org.example.userservice.dto.UserDTO;
@@ -18,10 +19,23 @@ public class UserController {
         this.userService = userService;
     }
 
-//    @GetMapping("/api/test")
-//    public String getTest(@RequestHeader(value = "X-User-Name", defaultValue = "anonymous") String username) {
-//        return "Hej " + username;
-//    }
+    @PostMapping("/create")
+    public UserDTO createUser(
+            @Valid @RequestBody CreateUserDTO dto) {
+        return userService.createUser(dto);
+    }
+
+    @PutMapping("/{id}")
+    public UserDTO updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserDTO dto) {
+        return userService.updateUser(id, dto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+    }
 
     @GetMapping
     public List<UserDTO> getAllUsers() {
@@ -41,24 +55,6 @@ public class UserController {
     @GetMapping("/phone/{phoneNumber}")
     public UserDTO getUserByPhoneNumber(@PathVariable String phoneNumber){
         return userService.getUserByPhoneNumber(phoneNumber);
-    }
-
-    @PostMapping("/create")
-    public UserDTO createUser(
-            @Valid @RequestBody CreateUserDTO dto) {
-        return userService.createUser(dto);
-    }
-
-    @PutMapping("/{id}")
-    public UserDTO updateUser(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateUserDTO dto) {
-        return userService.updateUser(id, dto);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
     }
 
 

@@ -1,6 +1,5 @@
-package org.example.userservice;
+package org.example.userservice.repository;
 
-import aj.org.objectweb.asm.commons.Remapper;
 import org.example.userservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

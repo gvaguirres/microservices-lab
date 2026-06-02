@@ -1,6 +1,7 @@
-package org.example.userservice;
+package org.example.userservice.service;
 
 import io.grpc.Status;
+import org.example.userservice.repository.UserRepository;
 import org.example.userservice.entity.User;
 import org.example.userservice.exception.ResourceNotFoundException;
 import org.springframework.grpc.server.service.GrpcService;
