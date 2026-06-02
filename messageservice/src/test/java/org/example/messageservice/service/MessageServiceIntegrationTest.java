@@ -6,19 +6,22 @@ import org.example.messageservice.entity.Message;
 import org.example.messageservice.event.MessagePublishedEvent;
 import org.example.messageservice.exception.ResourceNotFoundException;
 import org.example.messageservice.repository.MessageRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
@@ -38,7 +41,13 @@ class MessageServiceIntegrationTest {
     private MessageRepository messageRepository;
 
     @MockitoBean
-    private MessageProducer messageProducer;
+    private ApplicationEventPublisher eventPublisher;
+
+    @BeforeEach
+    void setUp() {
+        // Manually inject the mock
+        ReflectionTestUtils.setField(messageService, "eventPublisher", eventPublisher);
+    }
 
     @Test
     void shouldCreateMessageAndPersistIt() {
@@ -84,14 +93,14 @@ class MessageServiceIntegrationTest {
 
         MessageDTO result = messageService.sendMessage(dto);
 
-        verify(messageProducer, times(1)).publishMessage(any(MessagePublishedEvent.class));
+        ArgumentCaptor<MessagePublishedEvent> eventCaptor = ArgumentCaptor.forClass(MessagePublishedEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
-        verify(messageProducer).publishMessage(org.mockito.ArgumentMatchers.argThat(event -> 
-            event.messageId().equals(result.id()) &&
-            event.senderId().equals(10L) &&
-            event.receiverId().equals(20L) &&
-            event.message().equals("Kafka Test")
-        ));
+        MessagePublishedEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.messageId()).isEqualTo(result.id());
+        assertThat(publishedEvent.senderId()).isEqualTo(10L);
+        assertThat(publishedEvent.receiverId()).isEqualTo(20L);
+        assertThat(publishedEvent.message()).isEqualTo("Kafka Test");
     }
 
     @Test
