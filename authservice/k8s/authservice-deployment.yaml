@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authservice
+  template:
+    metadata:
+      labels:
+        app: authservice
+    spec:
+      containers:
+        - name: authservice
+          image: authservice:0.0.1-SNAPSHOT
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+          env:
+            - name: AUTH_ISSUER_URI
+              value: "http://authservice:9000"
+            - name: AUTH_REDIRECT_URI
+              value: "http://localhost:8080/login/oauth2/code/authservice"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: 9000
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: 9000
+      restartPolicy: Always
