@@ -32,7 +32,7 @@ public class BffRestController {
     }
 
 
-        @PostMapping("/users/create")
+    @PostMapping("/users/create")
     public UserDTO createUser(@RequestBody CreateUserDTO createUserDTO,
                               @AuthenticationPrincipal Jwt jwt) {
 
