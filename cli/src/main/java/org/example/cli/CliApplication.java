@@ -108,7 +108,13 @@ public class CliApplication implements CommandLineRunner {
             if (ex.getStatusCode() == HttpStatus.CONFLICT) {
                 System.out.println("A user with that email already exists.");
             } else {
-                System.out.println("Could not create user: " + ex.getStatusCode());
+                System.out.println("Could not create user");
+                System.out.println("Status: " + ex.getStatusCode());
+
+                String responseBody = ex.getResponseBodyAsString();
+                if (responseBody != null && !responseBody.isBlank()) {
+                    System.out.println("Details: " + responseBody + "\n");
+                }
             }
         } catch (Exception e) {
             System.out.println("Could not create user: " + e.getMessage());
