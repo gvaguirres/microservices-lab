@@ -12,14 +12,15 @@ This project consists of a distributed system designed to manage users and messa
 graph TD
     subgraph Client Layer
         CLI[💻 CLI Application]
+        Browser[🌐 Web Browser / User]
+    end
+
+    subgraph Security Layer
+        AS[🔑 Auth Service - Spring Authorization Server]
     end
 
     subgraph Gateway Layer
         BFF[🌉 BFF - Backend For Frontend]
-    end
-
-    subgraph Security Layer
-        AS[🔑 Auth Service - Authorization Server]
     end
 
     subgraph Service Layer
@@ -33,19 +34,25 @@ graph TD
         MDB[(🗄️ Message DB - PostgreSQL)]
     end
 
-    CLI -- Device Flow --> AS
-    CLI -- REST + JWT --> BFF
+    %% Authentication Flows
+    CLI -- "OAuth2 Device Flow (RFC 8628)" --> AS
+    Browser -- "OAuth2 Authorization Code Flow" --> BFF
+    BFF -- "OAuth2 Client Credentials / Token Exchange" --> AS
+
+    %% Application Communication
+    CLI -- "REST + JWT" --> BFF
     
-    BFF -- REST --> US
-    BFF -- REST --> MS
-    BFF -- GraphQL --> US
-    BFF -- GraphQL --> MS
+    BFF -- "REST (Internal API)" --> US
+    BFF -- "REST (Internal API)" --> MS
+    BFF -- "GraphQL (Data Aggregation)" --> US
+    BFF -- "GraphQL (Data Aggregation)" --> MS
     
-    MS -- gRPC --> US
-    MS -- Outbox Pattern --> KAFKA
+    MS -- "gRPC (Synchronous Lookup)" --> US
+    MS -- "Transactional Outbox Pattern" --> KAFKA
     
-    US --> UDB
-    MS --> MDB
+    %% Persistence
+    US -- "JDBC" --> UDB
+    MS -- "JDBC" --> MDB
 ```
 
 ## 📦 Description of Each Module
@@ -122,6 +129,17 @@ Ensuring "at-least-once" delivery to Kafka without distributed transactions:
 2.  **Polling:** `OutboxPublisher` scans for pending events. 🔍
 3.  **Publishing:** Events are sent to Kafka topic `message-published`. 🎡
 4.  **Completion:** Event status is updated to `SENT`. ✅
+
+## 🚧 Work in Progress: Kubernetes Implementation
+
+We are currently in the process of migrating our orchestration from Docker Compose to **Kubernetes**. The first service to receive K8s manifests is the `authservice`.
+
+### 🔑 Auth Service K8s Setup
+Located in `authservice/k8s/`, you will find:
+*   `authservice-deployment.yaml`: Defines the deployment strategy, container image, resource limits, and environment variables.
+*   `authservice-service.yaml`: Configures a `ClusterIP` service to provide a stable internal DNS name for the auth server.
+
+This marks the beginning of our transition towards a cloud-native orchestration model. ☁️
 
 ## 🚀 Instructions for Running the Project
 
